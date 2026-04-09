@@ -1,0 +1,15 @@
+[tool.black]
+line-length = 89
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 89
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
