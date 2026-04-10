@@ -23,16 +23,11 @@ def _entry(entry_id: str, vuln_type: str, language: str) -> DatasetEntry:
         severity="high",
         introduced_commit=None,
         fixed_commit=None,
-        benchmark_checkout_commit="deadbeef",
         affected_files=["src/example.c"],
-        benchmark_file_paths=["src/example.c"],
         affected_line_ranges=["10-20"],
         description="Fixture entry",
         source_urls=["https://example.com/advisory"],
-        validation_status="confirmed",
-        validation_notes="Fixture",
         code_snippet_ref="src/example.c:10-20",
-        benchmark_checkout_strategy="Use the pinned fixture commit for analysis tests.",
         dataset_version="2026.04",
     )
 

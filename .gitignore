@@ -3,4 +3,5 @@ __pycache__/
 .coverage
 *.pyc
 .beads/embeddeddolt/
+data/raw/repos/
 data/results/

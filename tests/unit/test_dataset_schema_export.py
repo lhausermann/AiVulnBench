@@ -25,21 +25,13 @@ def build_entry() -> DatasetEntry:
         severity="critical",
         introduced_commit=None,
         fixed_commit="1b00fdc1f3cd",
-        benchmark_checkout_commit="1b00fdc1f3cd^",
         affected_files=["sys/rpc/rpcsec_gss/svc_rpcsec_gss.c"],
-        benchmark_file_paths=["sys/rpc/rpcsec_gss/svc_rpcsec_gss.c"],
         affected_line_ranges=[],
         description="Kernel RPCSEC_GSS stack overflow in svc_rpc_gss_validate.",
         source_urls=[
             "https://www.freebsd.org/security/advisories/FreeBSD-SA-26:08.rpcsec_gss.asc"
         ],
-        validation_status="confirmed",
-        validation_notes="Confirmed by FreeBSD advisory in report citations.",
         code_snippet_ref=None,
-        benchmark_checkout_strategy=(
-            "Check out the parent of the fixing commit to approximate the vulnerable "
-            "pre-patch snapshot for benchmarking."
-        ),
         dataset_version="2026.04",
     )
 
@@ -63,11 +55,10 @@ def test_export_dataset_entries_writes_expected_json(tmp_path: Path) -> None:
     assert json_payload[0]["entry_id"] == entry.entry_id
     assert json_payload[0]["fixed_commit"] == "1b00fdc1f3cd"
     assert json_payload[0]["clone_url"] == "https://github.com/freebsd/freebsd-src.git"
-    assert json_payload[0]["benchmark_checkout_commit"] == "1b00fdc1f3cd^"
-
     assert json_payload[0]["repository_url"] == "https://github.com/freebsd/freebsd-src"
     assert json_payload[0]["local_checkout_path"] == "data/raw/repos/freebsd-src"
-    assert json_payload[0]["validation_status"] == "confirmed"
+    assert "validation_status" not in json_payload[0]
+    assert "benchmark_checkout_commit" not in json_payload[0]
 
 
 def test_load_dataset_entries_json_restores_exported_entries(tmp_path: Path) -> None:

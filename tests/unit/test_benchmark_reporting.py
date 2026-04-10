@@ -27,7 +27,7 @@ def test_write_codex_benchmark_report_creates_reproducible_markdown(
         project_root=tmp_path,
         summary=summary,
         methodology=(
-            "Codex was evaluated against the validated vulnerability dataset using "
+            "Codex was evaluated against the vulnerability dataset using "
             "deterministic prompt templates and normalized scoring."
         ),
         limitations=(

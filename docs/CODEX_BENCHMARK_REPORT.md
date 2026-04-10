@@ -3,10 +3,10 @@
 ## Methodology
 
 The repository now contains a deterministic benchmark workflow for evaluating
-Codex-style vulnerability auditing against the validated dataset built from
+Codex-style vulnerability auditing against the checked-in dataset built from
 `docs/REPORT.md`. The workflow is structured as:
 
-1. Convert validated dataset entries into benchmark cases with stable case IDs,
+1. Convert dataset entries into benchmark cases with stable case IDs,
    prompt template IDs, expected vulnerable locations, and reproducible prompt
    text.
 2. Execute those cases through a provider adapter that preserves raw output,
@@ -46,7 +46,7 @@ than a completed model-performance study.
 
 - Run `make clean`, `make test`, and `make lint` to validate the implemented
   benchmark stack.
-- Use `src/benchmark/codex/contract.py`, `src/benchmark/harness.py`, and
+- Use `src/benchmark/contracts.py`, `src/benchmark/harness.py`, and
   `src/benchmark/runner.py` as the operational path for generating cases and
   capturing run records.
 - Use `src/benchmark/analysis.py` and `src/benchmark/reporting.py` to summarize

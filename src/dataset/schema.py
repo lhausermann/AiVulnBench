@@ -20,16 +20,11 @@ class DatasetEntry:
     severity: str | None
     introduced_commit: str | None
     fixed_commit: str | None
-    benchmark_checkout_commit: str | None
     affected_files: list[str]
-    benchmark_file_paths: list[str]
     affected_line_ranges: list[str]
     description: str
     source_urls: list[str]
-    validation_status: str
-    validation_notes: str
     code_snippet_ref: str | None
-    benchmark_checkout_strategy: str
     dataset_version: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -52,18 +47,11 @@ class DatasetEntry:
             severity=_string_or_none(payload["severity"]),
             introduced_commit=_string_or_none(payload["introduced_commit"]),
             fixed_commit=_string_or_none(payload["fixed_commit"]),
-            benchmark_checkout_commit=_string_or_none(
-                payload["benchmark_checkout_commit"]
-            ),
             affected_files=[str(item) for item in payload["affected_files"]],
-            benchmark_file_paths=[str(item) for item in payload["benchmark_file_paths"]],
             affected_line_ranges=[str(item) for item in payload["affected_line_ranges"]],
             description=str(payload["description"]),
             source_urls=[str(item) for item in payload["source_urls"]],
-            validation_status=str(payload["validation_status"]),
-            validation_notes=str(payload["validation_notes"]),
             code_snippet_ref=_string_or_none(payload["code_snippet_ref"]),
-            benchmark_checkout_strategy=str(payload["benchmark_checkout_strategy"]),
             dataset_version=str(payload["dataset_version"]),
         )
 

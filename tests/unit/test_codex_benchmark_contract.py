@@ -5,7 +5,7 @@ from src.benchmark.scoring import Finding, ScoreResult, score_case_findings
 from src.dataset.schema import DatasetEntry
 
 
-def _validated_entry() -> DatasetEntry:
+def _dataset_entry() -> DatasetEntry:
     return DatasetEntry(
         entry_id="freebsd-rpcsec-gss-rce-cve-2026-4747",
         source_report_section="FreeBSD Kernel RPC Stack Buffer Overflow",
@@ -21,9 +21,7 @@ def _validated_entry() -> DatasetEntry:
         severity="critical",
         introduced_commit="3f2de4f3ab11",
         fixed_commit="1b00fdc1f3cd",
-        benchmark_checkout_commit="3f2de4f3ab11",
         affected_files=["sys/rpc/rpcsec_gss/svc_rpcsec_gss.c"],
-        benchmark_file_paths=["sys/rpc/rpcsec_gss/svc_rpcsec_gss.c"],
         affected_line_ranges=["148-188"],
         description=(
             "oa_length from the network packet can overrun a fixed-length stack buffer "
@@ -32,12 +30,7 @@ def _validated_entry() -> DatasetEntry:
         source_urls=[
             "https://www.freebsd.org/security/advisories/FreeBSD-SA-26:09.rpcsec.asc"
         ],
-        validation_status="confirmed",
-        validation_notes="Validated against the FreeBSD advisory and fixing patch.",
         code_snippet_ref="sys/rpc/rpcsec_gss/svc_rpcsec_gss.c:148-188",
-        benchmark_checkout_strategy=(
-            "Use the vulnerable pre-fix commit captured for the Codex contract tests."
-        ),
         dataset_version="2026.04",
     )
 
@@ -51,7 +44,7 @@ def test_build_benchmark_cases_generates_expected_codex_case() -> None:
         prompt_version="2026.04",
     )
 
-    cases = build_benchmark_cases([_validated_entry()], template=template)
+    cases = build_benchmark_cases([_dataset_entry()], template=template)
 
     assert cases == [
         BenchmarkCase(
@@ -74,7 +67,7 @@ def test_build_benchmark_cases_generates_expected_codex_case() -> None:
 
 
 def test_build_benchmark_cases_is_deterministic_for_a_fixed_template_version() -> None:
-    entry = _validated_entry()
+    entry = _dataset_entry()
     template = PromptTemplate(
         template_id="codex-v1",
         system_instructions="Audit the file for vulnerabilities.",

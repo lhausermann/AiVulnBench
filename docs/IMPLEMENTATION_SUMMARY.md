@@ -6,7 +6,8 @@ The repository uses a minimal Python scaffold with:
 
 - `src/` for application code
 - `tests/unit/` for unit tests
-- `data/raw/` and `data/validated/` for benchmark inputs and checked-in dataset state
+- `data/raw/` for persistent repo checkouts
+- `data/vulnerability_dataset.json` for the checked-in dataset
 - `Makefile` targets for install, test, lint, format, run, init-tasks, and verify-beads
 
 This document is the central place for implementation notes and will be updated
@@ -20,17 +21,17 @@ The dataset layer is intentionally small and runner-focused:
 - `storage.py` loads and writes JSON dataset artifacts used by the runner
 
 The repository no longer treats extraction, normalization, or validation as
-runtime responsibilities. The checked-in dataset JSON in `data/validated/`
-serves as the source of truth for benchmark execution.
+runtime responsibilities. The checked-in dataset JSON at
+`data/vulnerability_dataset.json` serves as the source of truth for benchmark
+execution.
 
-The dataset schema also now carries benchmark checkout metadata directly:
+The dataset schema carries only runner-facing repository metadata:
 
 - `clone_url` for the canonical clone endpoint
 - `local_checkout_path` for the expected workspace-relative checkout location
-- `benchmark_checkout_commit` for the preferred vulnerable snapshot when known
-- `benchmark_file_paths` for the repo-relative files that should be materialized
-- `benchmark_checkout_strategy` for entries where a concrete commit hash is not
-  yet available
+- `fixed_commit` for entries where the runner can derive a vulnerable pre-fix
+  checkout using the parent revision
+- `affected_files` for the repo-relative files that should be materialized
 
 ## Codex Benchmark Contract
 
@@ -38,7 +39,7 @@ The first benchmark layer now lives in `src/benchmark/` and is deliberately
 small:
 
 - `contracts.py` defines prompt-template metadata and deterministic
-  benchmark-case generation from validated dataset entries
+  benchmark-case generation from dataset entries
 - `scoring.py` defines a normalized finding shape plus the scoring contract for
   exact matches, overlapping-location partial matches, false positives, and
   false negatives

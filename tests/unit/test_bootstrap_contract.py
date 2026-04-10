@@ -10,7 +10,7 @@ def test_bootstrap_layout_exists() -> None:
         PROJECT_ROOT / "src",
         PROJECT_ROOT / "tests" / "unit",
         PROJECT_ROOT / "data" / "raw",
-        PROJECT_ROOT / "data" / "validated",
+        PROJECT_ROOT / "data" / "vulnerability_dataset.json",
         PROJECT_ROOT / "docs" / "IMPLEMENTATION_SUMMARY.md",
         PROJECT_ROOT / "Makefile",
         PROJECT_ROOT / "requirements.txt",
