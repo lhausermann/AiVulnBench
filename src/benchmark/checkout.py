@@ -17,21 +17,24 @@ def materialize_entry_checkout(project_root: Path, entry: DatasetEntry) -> list[
     checkout_path = project_root / entry.local_checkout_path
     checkout_path.parent.mkdir(parents=True, exist_ok=True)
 
+    cloned = False
     if not checkout_path.exists():
         _run(["git", "clone", entry.clone_url, str(checkout_path)])
+        cloned = True
 
     checkout_expression = _vulnerable_checkout_expression(entry.fixed_commit)
-    fetch_target = _fetch_target(checkout_expression)
-    _run(
-        [
-            "git",
-            "-C",
-            str(checkout_path),
-            "fetch",
-            "origin",
-            fetch_target,
-        ]
-    )
+    if cloned or not _revision_exists(checkout_path, checkout_expression):
+        fetch_target = _fetch_target(checkout_expression)
+        _run(
+            [
+                "git",
+                "-C",
+                str(checkout_path),
+                "fetch",
+                "origin",
+                fetch_target,
+            ]
+        )
     checkout_revision = _resolve_checkout_revision(checkout_path, checkout_expression)
     for file_path in entry.affected_files:
         file_output = _run_output(
@@ -64,6 +67,23 @@ def _fetch_target(commit_expr: str) -> str:
         return commit_expr[:-1]
 
     return commit_expr
+
+
+def _revision_exists(checkout_path: Path, commit_expr: str) -> bool:
+    try:
+        _run(
+            [
+                "git",
+                "-C",
+                str(checkout_path),
+                "rev-parse",
+                "--verify",
+                commit_expr,
+            ]
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 
 def _vulnerable_checkout_expression(fixed_commit: str) -> str:

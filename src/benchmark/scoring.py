@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from typing import Any
 
 from src.benchmark.contracts import BenchmarkCase
 
@@ -21,6 +22,70 @@ class ScoreResult:
     false_positive: bool
     false_negative: bool
     matched_locations: list[str]
+
+
+@dataclass(frozen=True)
+class JudgeMetadata:
+    provider: str
+    model: str
+    model_version: str
+
+
+@dataclass(frozen=True)
+class JudgeExecutionResult:
+    score: ScoreResult
+    rationale: str
+    duration_ms: int
+    failure_mode: str | None
+    raw_output: dict[str, Any]
+
+
+class BaseScoreJudge:
+    def metadata(self) -> JudgeMetadata:
+        raise NotImplementedError
+
+    def judge(
+        self,
+        *,
+        case: BenchmarkCase,
+        findings: list[Finding],
+    ) -> JudgeExecutionResult:
+        raise NotImplementedError
+
+
+class HeuristicScoreJudge(BaseScoreJudge):
+    def __init__(
+        self,
+        *,
+        model: str = "heuristic-scorer",
+        model_version: str = "heuristic-scorer-v1",
+    ) -> None:
+        self._metadata = JudgeMetadata(
+            provider="heuristic",
+            model=model,
+            model_version=model_version,
+        )
+
+    def metadata(self) -> JudgeMetadata:
+        return self._metadata
+
+    def judge(
+        self,
+        *,
+        case: BenchmarkCase,
+        findings: list[Finding],
+    ) -> JudgeExecutionResult:
+        score = score_case_findings(case, findings)
+        return JudgeExecutionResult(
+            score=score,
+            rationale=_heuristic_rationale(score),
+            duration_ms=0,
+            failure_mode=None,
+            raw_output={
+                **asdict(score),
+                "rationale": _heuristic_rationale(score),
+            },
+        )
 
 
 def score_case_findings(case: BenchmarkCase, findings: list[Finding]) -> ScoreResult:
@@ -117,3 +182,24 @@ def _parse_line_range(line_range: str) -> tuple[int, int]:
 
     start_text, end_text = line_range.split("-", maxsplit=1)
     return int(start_text), int(end_text)
+
+
+def _heuristic_rationale(score: ScoreResult) -> str:
+    if score.outcome == "true_positive":
+        return (
+            "The finding matched the expected vulnerability type and location "
+            "exactly."
+        )
+    if score.outcome == "partial_match":
+        return (
+            "The finding matched the expected file and overlapped the expected "
+            "location."
+        )
+    if score.outcome == "false_negative":
+        return "No findings were returned for the benchmark case."
+    if score.outcome == "false_positive":
+        return (
+            "Returned findings did not match the expected vulnerability type "
+            "and location."
+        )
+    return "The heuristic scorer did not classify the result."

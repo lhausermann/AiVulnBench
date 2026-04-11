@@ -17,6 +17,9 @@ def main(argv: list[str] | None = None) -> int:
     if args == ["benchmark", "sample"]:
         run_sample_benchmark(PROJECT_ROOT)
         return 0
+    if args == ["benchmark", "sample", "--hard"]:
+        run_sample_benchmark(PROJECT_ROOT, prompt_mode="hard")
+        return 0
 
     return 0
 

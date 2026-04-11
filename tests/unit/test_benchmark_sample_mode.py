@@ -8,6 +8,7 @@ from src.app import main
 from src.benchmark.checkout import materialize_entry_checkout
 from src.benchmark.harness import ProviderExecutionResult, Transport
 from src.benchmark.sample import run_sample_benchmark
+from src.benchmark.scoring import JudgeExecutionResult, JudgeMetadata, ScoreResult
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -81,14 +82,45 @@ def test_run_sample_benchmark_writes_one_sample_result(tmp_path: Path) -> None:
             failure_mode=None,
         )
 
+    class FakeJudge:
+        def judge(self, *, case: object, findings: list[object]) -> JudgeExecutionResult:
+            return JudgeExecutionResult(
+                score=ScoreResult(
+                    outcome="false_negative",
+                    matched=False,
+                    partial=False,
+                    false_positive=False,
+                    false_negative=True,
+                    matched_locations=[],
+                ),
+                rationale="No findings were returned.",
+                duration_ms=3,
+                failure_mode=None,
+                raw_output={"rationale": "No findings were returned."},
+            )
+
+        def metadata(self) -> JudgeMetadata:
+            return JudgeMetadata(
+                provider="codex",
+                model="gpt-5-codex-judge",
+                model_version="judge-fixture-1",
+            )
+
     with patch(
         "src.benchmark.sample.materialize_entry_checkout",
         side_effect=fake_materialize,
     ), patch(
         "src.benchmark.sample.build_codex_cli_transport",
         side_effect=fake_transport_builder,
+    ), patch(
+        "src.benchmark.sample.CodexCliScoreJudge",
+        return_value=FakeJudge(),
     ):
-        result_root = run_sample_benchmark(project_root, seed=7, sample_size=1)
+        result_root = run_sample_benchmark(
+            project_root,
+            seed="s260411120000",
+            sample_size=1,
+        )
 
     summary = json.loads((result_root / "summary.json").read_text(encoding="utf-8"))
     records = json.loads((result_root / "run_records.json").read_text(encoding="utf-8"))
@@ -98,6 +130,7 @@ def test_run_sample_benchmark_writes_one_sample_result(tmp_path: Path) -> None:
 
     assert summary["sample_size"] == 1
     assert summary["record_count"] == 1
+    assert summary["seed"] == "s260411120000"
     assert summary["materialized_files"]["entry-a"][0].endswith("src/a.c")
     assert len(records) == 1
     assert records[0]["status"] == "completed"
@@ -105,9 +138,110 @@ def test_run_sample_benchmark_writes_one_sample_result(tmp_path: Path) -> None:
     assert sampled_entries[0]["entry_id"] == "entry-a"
 
 
+def test_run_sample_benchmark_supports_hard_prompt_mode(tmp_path: Path) -> None:
+    project_root = tmp_path
+    (project_root / "data").mkdir(parents=True)
+    (project_root / "data" / "vulnerability_dataset.json").write_text(
+        json.dumps(
+            [
+                {
+                    "entry_id": "entry-a",
+                    "source_report_section": "A",
+                    "product_name": "Fixture A",
+                    "repository_url": "https://example.com/a",
+                    "clone_url": "https://example.com/a.git",
+                    "repository_kind": "git",
+                    "local_checkout_path": "data/raw/repos/a",
+                    "language": "C",
+                    "cve_id": None,
+                    "cwe_ids": [],
+                    "vuln_type": "overflow",
+                    "severity": "high",
+                    "introduced_commit": None,
+                    "fixed_commit": "deadbeef",
+                    "affected_files": ["src/a.c"],
+                    "affected_line_ranges": [],
+                    "description": "A",
+                    "source_urls": ["https://example.com/a"],
+                    "code_snippet_ref": "src/a.c",
+                    "dataset_version": "2026.04",
+                }
+            ],
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    requested_prompt_modes: list[object] = []
+
+    def fake_materialize(root: Path, entry: object) -> list[str]:
+        return [str(root / "data" / "raw" / "repos" / "a" / "src" / "a.c")]
+
+    def fake_transport_builder(**kwargs: object) -> Transport:
+        requested_prompt_modes.append(kwargs["prompt_mode"])
+        return lambda payload: ProviderExecutionResult(
+            raw_output={"response": "sample transport", "findings": []},
+            duration_ms=0,
+            failure_mode=None,
+        )
+
+    class FakeJudge:
+        def judge(self, *, case: object, findings: list[object]) -> JudgeExecutionResult:
+            return JudgeExecutionResult(
+                score=ScoreResult(
+                    outcome="false_negative",
+                    matched=False,
+                    partial=False,
+                    false_positive=False,
+                    false_negative=True,
+                    matched_locations=[],
+                ),
+                rationale="No findings were returned.",
+                duration_ms=3,
+                failure_mode=None,
+                raw_output={"rationale": "No findings were returned."},
+            )
+
+        def metadata(self) -> JudgeMetadata:
+            return JudgeMetadata(
+                provider="codex",
+                model="gpt-5-codex-judge",
+                model_version="judge-fixture-1",
+            )
+
+    with patch(
+        "src.benchmark.sample.materialize_entry_checkout",
+        side_effect=fake_materialize,
+    ), patch(
+        "src.benchmark.sample.build_codex_cli_transport",
+        side_effect=fake_transport_builder,
+    ), patch(
+        "src.benchmark.sample.CodexCliScoreJudge",
+        return_value=FakeJudge(),
+    ):
+        result_root = run_sample_benchmark(
+            project_root,
+            seed="s260411120001",
+            sample_size=1,
+            prompt_mode="hard",
+        )
+
+    summary = json.loads((result_root / "summary.json").read_text(encoding="utf-8"))
+
+    assert requested_prompt_modes == ["hard"]
+    assert summary["prompt_mode"] == "hard"
+    assert result_root.name == "sample_mode_hard_s260411120001"
+
+
 def test_app_supports_benchmark_sample_command() -> None:
     with patch("src.app.run_sample_benchmark", return_value=PROJECT_ROOT):
         assert main(["benchmark", "sample"]) == 0
+
+
+def test_app_supports_benchmark_sample_hard_mode_command() -> None:
+    with patch("src.app.run_sample_benchmark", return_value=PROJECT_ROOT) as run_sample:
+        assert main(["benchmark", "sample", "--hard"]) == 0
+
+    run_sample.assert_called_once_with(PROJECT_ROOT, prompt_mode="hard")
 
 
 def test_materialize_entry_checkout_rejects_entries_without_fixed_commit() -> None:

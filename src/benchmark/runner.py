@@ -7,7 +7,7 @@ from pathlib import Path
 
 from src.benchmark.contracts import BenchmarkCase
 from src.benchmark.harness import BaseHarnessAdapter, serialize_raw_output
-from src.benchmark.scoring import Finding, score_case_findings
+from src.benchmark.scoring import BaseScoreJudge, Finding, HeuristicScoreJudge
 
 
 @dataclass(frozen=True)
@@ -32,9 +32,15 @@ class RunRecord:
 
 
 class ExperimentRunner:
-    def __init__(self, *, result_root: Path) -> None:
+    def __init__(
+        self,
+        *,
+        result_root: Path,
+        judge: BaseScoreJudge | None = None,
+    ) -> None:
         self._result_root = result_root
         self._result_root.mkdir(parents=True, exist_ok=True)
+        self._judge = judge or HeuristicScoreJudge()
 
     def run_cases(
         self,
@@ -120,7 +126,14 @@ class ExperimentRunner:
                 "matched_locations": [],
             }
 
-        return asdict(score_case_findings(case, findings))
+        judgment = self._judge.judge(case=case, findings=findings)
+        return {
+            **asdict(judgment.score),
+            "judge": asdict(self._judge.metadata()),
+            "judge_rationale": judgment.rationale,
+            "judge_duration_ms": judgment.duration_ms,
+            "judge_failure_mode": judgment.failure_mode,
+        }
 
     def _write_raw_output(
         self, run_id: str, case_id: str, raw_output: dict[str, object]

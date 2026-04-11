@@ -137,11 +137,12 @@ def test_materialize_entry_checkout_reuses_existing_clone(tmp_path: Path) -> Non
         materialize_entry_checkout(tmp_path, _entry())
 
     assert all(command[:2] != ["git", "clone"] for command in commands)
+    assert all("fetch" not in command for command in commands)
     assert commands[0] == [
         "git",
         "-C",
         str(tmp_path / "data/raw/repos/freebsd-src"),
-        "fetch",
-        "origin",
-        "1b00fdc1f3cd",
+        "rev-parse",
+        "--verify",
+        "1b00fdc1f3cd^",
     ]

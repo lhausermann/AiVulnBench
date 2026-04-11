@@ -62,6 +62,21 @@ The first concrete adapters are `CodexHarnessAdapter` and
 `GeminiCliHarnessAdapter`. Both consume the same benchmark-case contract and
 normalize provider output into the shared finding shape used by scoring.
 
+Codex CLI sample runs now write reviewer-facing artifacts under
+`data/results/<run>/codex_cli/`:
+
+- `prompts/<case>.txt` for the exact prompt sent to Codex
+- `logs/<case>.log` for major execution steps, paths, return code, and duration
+- `stdout/<case>.log` and `stderr/<case>.log` for raw Codex CLI process logs
+- `pretty/<case>.json` for the parsed result, findings, failure mode, duration,
+  and captured stdout/stderr
+
+Sample mode also supports `python -m src.app benchmark sample --hard`, which
+uses the same checkout and artifact flow but sends a sparse prompt containing
+only the materialized files and a generic vulnerability-audit request. Hard mode
+intentionally omits the case ID, vulnerability type hint, benchmark prompt, and
+report-derived context from the prompt sent to Codex.
+
 ## Analysis And Reporting
 
 The benchmark analysis/reporting layer now includes:
