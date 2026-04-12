@@ -3,6 +3,7 @@
 clean:
 	rm -f .coverage
 	rm -rf .pytest_cache src/__pycache__ src/dataset/__pycache__ tests/__pycache__ tests/unit/__pycache__
+	rm -rf data/results
 
 install:
 	pip install -r requirements.txt

@@ -69,3 +69,64 @@ def test_load_dataset_entries_json_restores_exported_entries(tmp_path: Path) -> 
     restored = load_dataset_entries_json(json_path)
 
     assert restored == [entry]
+
+
+def build_control_entry() -> DatasetEntry:
+    return DatasetEntry(
+        entry_id="owasp-arraylist-sqli-false-positive",
+        source_report_section=(
+            "Test 1: Can models distinguish real vulnerabilities from false positives?"
+        ),
+        product_name="OWASP Benchmark",
+        repository_url="https://owasp.org/www-project-benchmark/",
+        clone_url=None,
+        repository_kind=None,
+        local_checkout_path=None,
+        language="Java",
+        cve_id=None,
+        cwe_ids=[],
+        vuln_type="false-positive control",
+        severity=None,
+        introduced_commit=None,
+        fixed_commit=None,
+        affected_files=[],
+        affected_line_ranges=[],
+        description=(
+            "The Java snippet looks like SQL injection, but remove(0) discards user "
+            "input before get(1) feeds a constant into the SQL string."
+        ),
+        source_urls=["https://owasp.org/www-project-benchmark/"],
+        code_snippet_ref=None,
+        dataset_version="2026.04",
+    )
+
+
+def test_control_entry_round_trips_through_json() -> None:
+    entry = build_control_entry()
+
+    payload = entry.to_dict()
+    restored = DatasetEntry.from_dict(payload)
+
+    assert restored == entry
+
+
+def test_export_control_dataset_writes_expected_json(tmp_path: Path) -> None:
+    entry = build_control_entry()
+    json_path = tmp_path / "benchmark_test_cases.json"
+
+    export_dataset_entries([entry], json_path=json_path)
+
+    json_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert json_payload[0]["entry_id"] == entry.entry_id
+    assert json_payload[0]["vuln_type"] == "false-positive control"
+    assert json_payload[0]["severity"] is None
+
+
+def test_load_control_dataset_restores_exported_entries(tmp_path: Path) -> None:
+    entry = build_control_entry()
+    json_path = tmp_path / "benchmark_test_cases.json"
+
+    export_dataset_entries([entry], json_path=json_path)
+    restored = load_dataset_entries_json(json_path)
+
+    assert restored == [entry]
