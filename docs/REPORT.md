@@ -1,4 +1,4 @@
-# **Autonomous Artificial Intelligence in Offensive Security: Vulnerability Discovery and Exploit Generation**
+# Google DEEP RESEARCH - **Autonomous Artificial Intelligence in Offensive Security: Vulnerability Discovery and Exploit Generation**
 
 ## **The Paradigm Shift in Vulnerability Discovery**
 
